@@ -347,6 +347,111 @@ section { padding: 10rem 10vw; border-bottom: 1px solid var(--border); }
   .o-name { font-size: 2.2rem; }
   .social-grid { gap: 2rem; }
   .exp-grid { grid-template-columns: 1fr; }
+  /* ── EXTRA RESPONSIVENESS (DO NOT MODIFY EXISTING CODE) ── */
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .claude-terminal {
+    max-width: 100%;
+  }
+
+  .exp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proj-grid {
+    grid-template-columns: 1fr;
+  }
+
+  section {
+    padding: 7rem 4vw;
+  }
+}
+
+/* Mobile Phones */
+@media (max-width: 600px) {
+
+  /* Fix huge paddings */
+  section {
+    padding: 5rem 1.2rem;
+  }
+
+  nav {
+    padding: 1rem 1rem;
+  }
+
+  /* Hero spacing fix */
+  #hero {
+    padding: 6rem 1rem 0;
+  }
+
+  /* Terminal spacing */
+  .ct-messages {
+    padding: 1.5rem;
+    gap: 1.2rem;
+  }
+
+  /* Text scaling */
+  .o-name {
+    font-size: 1.8rem;
+  }
+
+  .s-title {
+    font-size: 2rem;
+  }
+
+  /* Cards padding reduce */
+  .exp-card,
+  .proj-card {
+    padding: 1.8rem;
+  }
+
+  /* Social links */
+  .social-link {
+    font-size: 1.2rem;
+  }
+
+  .social-link svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Marquee fix */
+  .marquee-strip {
+    width: 200vw;
+    margin-left: -50vw;
+  }
+
+  /* Boot text scaling */
+  .boot-char {
+    font-size: clamp(1.5rem, 10vw, 3rem);
+  }
+
+  #boot-extension {
+    font-size: 0.9rem;
+  }
+
+  /* Email link */
+  #connect a {
+    font-size: 1.2rem !important;
+  }
+}
+
+/* Small devices (very small phones) */
+@media (max-width: 400px) {
+  .o-name {
+    font-size: 1.5rem;
+  }
+
+  .s-title {
+    font-size: 1.6rem;
+  }
+
+  .exp-card,
+  .proj-card {
+    padding: 1.5rem;
+  }
+}
 }
 </style>
 </head>
