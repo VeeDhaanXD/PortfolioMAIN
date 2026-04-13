@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VeeDhzXD </title>
+<link rel="icon" type="image/png/svg" href="dev.svg">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#030504;
+  --surface:#080c0a;
+  --surface2:#0d120f;
+  --surface3:#141b17;
+  --border:rgba(255,255,255,0.04);
+  --border2:rgba(255,255,255,0.08);
+
+  --acc:rgb(213, 105, 70);
+  --acc-rgb: 213, 105, 70;
+  --acc-dim:rgba(213, 105, 70, 0.1);
+  --acc-glow:rgba(213, 105, 70, 0.25);
+  --acc-border:rgba(213, 105, 70, 0.35);
+
+  --sidebar:#060807;
+  --sidebar-hover:#0f1512;
+  --sidebar-active:#16201b;
+  --user-bubble:#111a15;
+  --claude-text:#ccd9d2;
+
+  --text:#e0e8e4;
+  --muted:#6b8a7a;
+  --muted2:#3d5548;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+}
+
+html.lenis { height: auto; }
+.lenis-stopped { overflow: hidden; }
+.lenis-scrolling iframe { pointer-events: none; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN OVERLAY ── */
+.noise-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ── CURSOR ── */
+#cursor {
+  position: fixed;
+  width: 6px; height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10001;
+  mix-blend-mode: difference;
+  transition: transform 0.08s ease;
+}
+#cursor-ring {
+  position: fixed;
+  width: 34px; height: 34px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transition: transform 0.15s cubic-bezier(0.17, 0.67, 0.83, 0.67), width 0.3s, height 0.3s, border 0.3s;
+}
+body.ch #cursor-ring { width: 50px; height: 50px; border-color: var(--acc); background: var(--acc-dim); }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: 1.5rem 3.5rem; display: flex; align-items: center; justify-content: space-between;
+  mix-blend-mode: difference;
+}
+.nav-logo { font-size: 0.75rem; letter-spacing: 0.25em; color: #fff; font-weight: 700; }
+.nav-links { display: flex; gap: 3.5rem; }
+.nav-links a { 
+  color: rgba(255,255,255,0.5); font-size: 0.6rem; text-decoration: none; 
+  text-transform: uppercase; letter-spacing: 0.2em; transition: color 0.4s ease;
+  position: relative; padding: 0.5rem;
+}
+.nav-links a:hover, .nav-links a.active { color: #fff; }
+
+/* ── REFINED BOOT ── */
+#boot {
+  position: fixed; inset: 0; background: var(--bg); z-index: 9000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.boot-logo-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+.boot-name-wrap {
+  display: flex;
+  justify-content: center;
+}
+.boot-char {
+  font-family: var(--sans);
+  font-size: clamp(2rem, 8vw, 6rem);
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  display: inline-block;
+  opacity: 0;
+  filter: blur(20px);
+  transform: scale(1.5) translateY(20px);
+  letter-spacing: 0.1em;
+}
+#boot-extension {
+  font-family: var(--mono);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  color: var(--acc);
+  font-weight: 700;
+  height: 1.5em;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+.boot-bar { width: 240px; height: 1px; background: var(--surface3); position: relative; overflow: hidden; opacity: 0; }
+.boot-fill { height: 100%; background: var(--acc); width: 0; transition: width 2s cubic-bezier(0.7, 0, 0.3, 1); }
+.boot-status { 
+  font-family: var(--mono); 
+  font-size: 0.55rem; 
+  color: var(--muted2); 
+  letter-spacing: 0.2em; 
+  margin-top: 1rem;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+/* ── HERO ── */
+#hero {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 8rem 5vw 0; perspective: 1200px; overflow: hidden; position: relative;
+}
+.hero-grid {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
+  background-image: 
+    linear-gradient(rgba(213, 105, 70, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(213, 105, 70, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── MARQUEE SYSTEM ── */
+.marquee-container {
+  width: 100vw;
+  position: relative;
+  margin-top: 2rem;
+  padding-bottom: 8rem;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+}
+.marquee-strip {
+  width: 140vw;
+  margin-left: -20vw;
+  background: rgba(8, 12, 10, 0.6);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border2);
+  padding: 1.8rem 0;
+  overflow: hidden;
+  display: flex;
+  transform-origin: center;
+}
+.marquee-strip.inclined { 
+  transform: rotate(2.5deg); 
+  background: rgba(var(--acc-rgb), 0.05);
+  border-color: var(--acc-border);
+  z-index: 6;
+}
+.marquee-strip.counter-inclined { 
+  transform: rotate(-1.5deg); 
+  z-index: 4;
+}
+
+.marquee-content {
+  display: flex;
+  white-space: nowrap;
+  gap: 4.5rem;
+  animation: marquee 45s linear infinite;
+  padding-right: 4.5rem;
+}
+.marquee-strip.inclined .marquee-content { animation-duration: 35s; animation-direction: reverse; }
+.marquee-strip.counter-inclined .marquee-content { animation-duration: 60s; }
+
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.marquee-item svg { width: 18px; height: 18px; opacity: 0.6; }
+.marquee-item.ai-node { color: var(--acc); font-weight: 600; }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── CLAUDE TERMINAL ── */
+.claude-terminal {
+  max-width: 1000px; width: 100%;
+  background: var(--sidebar);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  display: grid; grid-template-columns: 240px 1fr;
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.02);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  margin-bottom: 4rem;
+}
+.ct-sidebar { border-right: 1px solid var(--border); background: rgba(6,8,7,0.4); }
+.ct-main { background: var(--surface); position: relative; }
+.ct-topbar { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.ct-pill { padding: 0.35rem 0.9rem; border-radius: 100px; font-size: 0.58rem; border: 1px solid var(--border); color: var(--muted); background: var(--surface2); }
+.ct-pill.active { border-color: var(--acc-border); background: var(--acc-dim); color: var(--acc); }
+
+.ct-messages { padding: 2.5rem; min-height: 420px; display: flex; flex-direction: column; gap: 2rem; }
+.msg-user { align-self: flex-end; background: var(--user-bubble); padding: 1rem 1.5rem; border-radius: 16px 16px 4px 16px; font-size: 0.75rem; border: 1px solid var(--border2); color: var(--text); }
+.msg-claude { display: flex; gap: 1.2rem; }
+.msg-claude-avatar { width: 32px; height: 32px; background: var(--acc); border-radius: 8px; flex-shrink: 0; display: grid; place-items: center; font-weight: 800; font-size: 0.8rem; color: #fff; }
+.msg-claude-body { font-size: 0.82rem; line-height: 1.85; color: var(--claude-text); }
+
+.o-name { font-family: var(--sans); font-size: 2.8rem; font-weight: 800; line-height: 1; margin: 0.5rem 0; letter-spacing: -0.04em; }
+.o-name span { color: var(--acc); display: inline-block; }
+.o-role { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.o-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 1rem; }
+.o-tag { font-size: 0.55rem; padding: 3px 10px; border: 1px solid var(--border2); border-radius: 100px; color: var(--muted); background: var(--surface2); letter-spacing: 0.05em; }
+
+/* ── SECTIONS ── */
+section { padding: 10rem 10vw; border-bottom: 1px solid var(--border); }
+.s-label { font-size: 0.65rem; color: var(--acc); letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 1.5rem; display: block; font-weight: 600; }
+.s-title { font-family: var(--sans); font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4rem; min-height: 1.2em; }
+
+/* ── STANDOUT EXPERIENCE CARDS ── */
+.exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 2rem; position: relative; }
+.exp-card { 
+  background: var(--surface); border: 1px solid var(--border2); padding: 3rem; border-radius: 24px; position: relative; overflow: hidden; 
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1); display: flex; flex-direction: column; justify-content: space-between;
+}
+.exp-card:hover { border-color: var(--acc-border); background: var(--surface2); transform: translateY(-12px); box-shadow: 0 40px 80px -15px rgba(0,0,0,0.8), 0 0 30px var(--acc-dim); }
+.exp-card::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--acc); transform: scaleY(0); transform-origin: top; transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.exp-card:hover::before { transform: scaleY(1); }
+
+.exp-date { font-family: var(--mono); font-size: 0.65rem; color: var(--acc); letter-spacing: 0.2em; display: block; margin-bottom: 0.8rem; }
+.exp-role { font-family: var(--sans); font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.5rem; }
+.exp-co { font-size: 0.9rem; color: var(--muted); letter-spacing: 0.05em; }
+.exp-body p { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 2rem; }
+.exp-footer-log { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; font-family: var(--mono); font-size: 0.65rem; color: var(--muted2); position: relative; }
+.exp-footer-log span { color: var(--acc); opacity: 0.7; }
+
+/* ── MODERN PROJECT CARDS ── */
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 2.5rem; }
+.proj-card { 
+  background: var(--surface); border: 1px solid var(--border); padding: 3rem; border-radius: 24px;
+  position: relative; transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden; cursor: pointer;
+}
+.proj-card:hover { border-color: var(--acc-border); background: var(--surface2); transform: translateY(-10px) scale(1.02); box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8), 0 0 20px var(--acc-dim); }
+
+.proj-img-mock { width: 100%; height: 6px; background: var(--border2); border-radius: 100px; margin-bottom: 2rem; overflow: hidden; position: relative; }
+.proj-img-mock::after { content: ''; position: absolute; inset: 0; background: var(--acc); width: 0%; transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
+.proj-card:hover .proj-img-mock::after { width: 100%; }
+
+.proj-card h3 { font-family: var(--sans); font-size: 2rem; margin-bottom: 1rem; color: #fff; transition: color 0.4s; }
+.proj-card:hover h3 { color: var(--acc); }
+.proj-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.8; margin-bottom: 2.5rem; opacity: 0.8; }
+
+.more-projects-link {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 4rem;
+}
+.linkedin-bridge {
+  font-family: var(--mono);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  padding: 1.5rem 2.5rem;
+  border: 1px dashed var(--border2);
+  border-radius: 100px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.4s;
+}
+.linkedin-bridge:hover {
+  color: #fff;
+  border-style: solid;
+  border-color: var(--acc);
+  background: var(--acc-dim);
+}
+
+/* ── SKILLS ── */
+.skill-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.skill-tag { padding: 0.7rem 1.4rem; background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; font-size: 0.72rem; transition: 0.3s; cursor: default; display: flex; align-items: center; gap: 10px; }
+.skill-tag:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-dim); transform: scale(1.05); }
+
+/* ── SOCIAL CONNECT ── */
+.connect-section { text-align: center; padding: 12rem 10vw 8rem; border: none; }
+.social-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 4rem; margin-top: 4rem; }
+.social-link { 
+  text-decoration: none; color: var(--muted); font-family: var(--sans); font-size: 1.5rem; 
+  font-weight: 700; transition: all 0.4s; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.social-link svg { width: 32px; height: 32px; margin-bottom: 10px; transition: transform 0.4s ease; }
+.social-link:hover { color: #fff; }
+.social-link:hover svg { transform: translateY(-5px); color: var(--acc); }
+
+/* ── TYPING CURSOR ── */
+.type-cursor { display: inline-block; width: 0.15em; height: 0.9em; background-color: var(--acc); margin-left: 0.1em; vertical-align: middle; animation: blink 1s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+@media (max-width: 768px) {
+  nav { padding: 1.2rem 1.5rem; }
+  .nav-links { display: none; }
+  .claude-terminal { grid-template-columns: 1fr; }
+  .ct-sidebar { display: none; }
+  section { padding: 6rem 1.5rem; }
+  .o-name { font-size: 2.2rem; }
+  .social-grid { gap: 2rem; }
+  .exp-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body class="lenis">
+
+<div class="noise-overlay"></div>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<div id="boot">
+  <div class="boot-logo-container">
+    <div class="boot-name-wrap">
+      <span class="boot-char">V</span>
+      <span class="boot-char">E</span>
+      <span class="boot-char">E</span>
+      <span class="boot-char">D</span>
+      <span class="boot-char">H</span>
+      <span class="boot-char">A</span>
+      <span class="boot-char">A</span>
+      <span class="boot-char">N</span>
+    </div>
+    <div id="boot-extension"></div>
+  </div>
+  <div class="boot-bar" id="boot-bar-wrap"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-status" id="boot-status">Retrieving Core Kernels...</div>
+</div>
+
+<nav>
+  <div class="nav-logo magnetic" data-strength="15">VEEDHAAN.V2</div>
+  <div class="nav-links">
+    <a href="#about" class="magnetic" data-strength="20">Info</a>
+    <a href="#experience" class="magnetic" data-strength="20">Experience</a>
+    <a href="#skills" class="magnetic" data-strength="20">Stack</a>
+    <a href="#projects" class="magnetic" data-strength="20">Projects</a>
+    <a href="#connect" class="magnetic" data-strength="20">Connect</a>
+  </div>
+</nav>
+<section id="hero">
+  <div class="hero-grid"></div>
+  
+  <div class="claude-terminal" id="terminal">
+    <div class="ct-sidebar">
+      <div style="padding: 1.5rem;">
+        <div style="display:flex; gap: 10px; align-items:center; margin-bottom: 2.5rem;">
+          <div class="msg-claude-avatar" style="width:26px; height:26px; font-size: 0.65rem;">V</div>
+          <span style="font-size: 0.72rem; font-weight:700;">veedhaan.ai ⚡</span>
+        </div>
+        <div style="font-size: 0.52rem; color: var(--muted2); text-transform:uppercase; letter-spacing:0.15em; margin-bottom: 1.2rem;">Core Projects 🚀</div>
+        <div style="font-size: 0.68rem; color: var(--text); padding: 0.6rem 0.9rem; background: var(--sidebar-active); border-radius: 8px; margin-bottom: 0.5rem;">WIT_Vault.config 📂</div>
+        <div style="font-size: 0.68rem; color: var(--muted); padding: 0.6rem 0.9rem; border-radius: 8px;">rag_kernel_v1.py 🧠</div>
+      </div>
+    </div>
+    
+    <div class="ct-main">
+      <div class="ct-topbar">
+        <span style="font-size: 0.7rem; font-weight: 500; opacity: 0.8;">Conversation Hub 💬</span>
+        <div style="display:flex; gap:8px;">
+          <div class="ct-pill active">Claude 3.7 🤖</div>
+          <div class="ct-pill">Reasoning Enabled ⚙️</div>
+        </div>
+      </div>
+      
+      <div class="ct-messages" id="chat-box">
+        <div class="msg-user" style="opacity:0; transform: translateY(15px);" id="user-q">Retrieve entity profile for Veedhaan.</div>
+        
+        <div class="msg-claude" style="opacity:0;" id="claude-r">
+          <div class="msg-claude-avatar">C</div>
+          <div class="msg-claude-body">
+            <div id="thinking" style="color: var(--muted); font-size: 0.6rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 6px;">
+              <span>Synthesizing profile 🧠</span>
+              <span class="dot-anim">...</span>
+            </div>
+            <div id="response-content"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="position:absolute; bottom:0; left:0; right:0; padding: 1.5rem; border-top: 1px solid var(--border);">
+        <div style="background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; padding: 0.9rem 1.2rem; color: var(--muted2); font-size: 0.72rem; display: flex; justify-content: space-between;">
+          <span>Explain recent work with Agentic AI... 🤖</span>
+          <span style="font-size: 0.8rem;">⌘ K</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="marquee-container">
+    <div class="marquee-strip">
+      <div class="marquee-content" id="marquee-1">
+        <div class="marquee-item">⚛️ React.js</div>
+        <div class="marquee-item">🟢 Node.js</div>
+        <div class="marquee-item">▲ Next.js</div>
+        <div class="marquee-item">🍃 MongoDB</div>
+        <div class="marquee-item">🔗 LangChain</div>
+        <div class="marquee-item">🧠 Agentic AI</div>
+      </div>
+    </div>
+
+    <div class="marquee-strip inclined">
+      <div class="marquee-content" id="marquee-2">
+        <div class="marquee-item ai-node">🧩 Attention Mechanism</div>
+        <div class="marquee-item ai-node">🔷 Transformer Layer</div>
+        <div class="marquee-item ai-node">⚙️ Neural Weights</div>
+        <div class="marquee-item ai-node">🔗 Vector Synapse</div>
+        <div class="marquee-item ai-node">🧠 Agentic Orchestrator</div>
+        <div class="marquee-item ai-node">🎯 Token Optimization</div>
+      </div>
+    </div>
+
+    <div class="marquee-strip counter-inclined">
+      <div class="marquee-content" id="marquee-3">
+        <div class="marquee-item">🐳 Docker Kernel</div>
+        <div class="marquee-item">🔄 CI/CD Pipelines</div>
+        <div class="marquee-item">☁️ AWS Architecture</div>
+        <div class="marquee-item">🌿 Git Protocol</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <span class="s-label">01 // Logic Layer</span>
+  <h2 class="s-title type-text" data-text="Engineering systems that bridge human intent and machine execution."></h2>
+  
+  <div class="grid-2" style="align-items: flex-start;">
+    <div class="about-desc gs-reveal">
+      <p style="font-size: 1.1rem; color: var(--text); margin-bottom: 2rem; line-height: 1.8;">I am a Second Year BTech student specializing in the architecture of intelligent web platforms.</p>
+      <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.9rem;">My focus lies at the intersection of the <strong>MERN stack</strong> and <strong>Agentic AI</strong>. I build high-performance applications that aren't just reactive, but proactive, using localized RAG pipelines and automated DevOps workflows.</p>
+    </div>
+    <div class="stats grid-2" style="gap: 1rem;">
+      <div class="stat-card gs-reveal" style="background: var(--surface); padding: 2rem; border: 1px solid var(--border); border-radius: 16px;">
+        <div style="font-size: 2.5rem; font-family: var(--sans); font-weight: 800; color: var(--acc);">02</div>
+        <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Years Creating</div>
+      </div>
+      <div class="stat-card gs-reveal" style="background: var(--surface); padding: 2rem; border: 1px solid var(--border); border-radius: 16px;">
+        <div style="font-size: 2.5rem; font-family: var(--sans); font-weight: 800; color: var(--acc);">12+</div>
+        <div style="font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Deployments</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="experience">
+  <span class="s-label">02 // Operational History</span>
+  <h2 class="s-title type-text" data-text="High-impact nodes of impact and growth."></h2>
+  
+  <div class="exp-grid">
+    <div class="exp-card gs-reveal magnetic" data-strength="15">
+      <div class="exp-header">
+        <span class="exp-date">2025 — PRESENT</span>
+        <h3 class="exp-role">Technical Coordinator</h3>
+        <p class="exp-co">Google Developer Groups — WIT Solapur</p>
+      </div>
+      <div class="exp-body">
+        <p>Orchestrating technical strategy and community engagement for 200+ developers. Spearheading workshops on Generative AI and MERN architectural patterns.</p>
+      </div>
+      <div class="exp-footer-log">
+        [status] <span>NODE_ACTIVE</span> <br>
+        [task] <span>COMMUNITY_ORCHESTRATION</span> <br>
+        [impact] <span>HIGH_VOL_MENTORSHIP</span>
+      </div>
+    </div>
+
+    <div class="exp-card gs-reveal magnetic" data-strength="15">
+      <div class="exp-header">
+        <span class="exp-date">2025 — PRESENT</span>
+        <h3 class="exp-role">Technical Lead</h3>
+        <p class="exp-co">Computer Society of India — WIT Solapur</p>
+      </div>
+      <div class="exp-body">
+        <p>Defining technical roadmaps for departmental hackathons and competitions. Bridging the gap between academic theory and industry-standard engineering practices.</p>
+      </div>
+      <div class="exp-footer-log">
+        [node] <span>LEAD_ARCHITECT</span> <br>
+        [task] <span>HACKATHON_GOVERNANCE</span> <br>
+        [impact] <span>CURRICULUM_SYNTHESIS</span>
+      </div>
+    </div>
+
+    <div class="exp-card gs-reveal magnetic" data-strength="15">
+      <div class="exp-header">
+        <span class="exp-date">JAN 2026 — APRIL 2026</span>
+        <h3 class="exp-role">Intern (3 Months)</h3>
+        <p class="exp-co">IISPPR — Institute of Innovation</p>
+      </div>
+      <div class="exp-body">
+        <p>Architected custom software solutions for institutional research. Integrated AI agents into administrative workflows, successfully concluding a 3-month tenure.</p>
+      </div>
+      <div class="exp-footer-log">
+        [status] <span>TERM_COMPLETED</span> <br>
+        [task] <span>SYSTEM_INFRA_ENGINEERING</span> <br>
+        [impact] <span>WORKFLOW_AUTOMATION</span>
+      </div>
+    </div>
+
+    <div class="exp-card gs-reveal magnetic" data-strength="15">
+      <div class="exp-header">
+        <span class="exp-date">DEC 2025 - JAN 2026</span>
+        <h3 class="exp-role">Automation Intern</h3>
+        <p class="exp-co">Automation AI Infosystems</p>
+      </div>
+      <div class="exp-body">
+        <p>Developed Python-driven automation scripts for business data processing. Gained hands-on experience in production environments and CI/CD basics.</p>
+      </div>
+      <div class="exp-footer-log">
+        [status] <span>LEGACY_UPGRADE</span> <br>
+        [task] <span>SCRIPT_OPTIMIZATION</span> <br>
+        [impact] <span>LATENCY_REDUCTION</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="projects">
+  <span class="s-label">03 // Core Artifacts</span>
+  <h2 class="s-title type-text" data-text="What I have committed."></h2>
+  
+  <div class="proj-grid">
+    <div class="proj-card gs-reveal magnetic" data-strength="12">
+      <div class="proj-img-mock"></div>
+      <span style="font-size: 0.55rem; color: var(--acc); letter-spacing: 0.2em; text-transform: uppercase;">Automation / Architecture</span>
+      <h3>WIT Vault</h3>
+      <p>High-performance report generation engine for Walchand Institute of Technology. Features automated PDF document pipelines and institutional data synthesis.</p>
+      <div class="skill-tags">
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">React</div>
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">Node</div>
+      </div>
+    </div>
+
+    <div class="proj-card gs-reveal magnetic" data-strength="12">
+      <div class="proj-img-mock"></div>
+      <span style="font-size: 0.55rem; color: var(--acc); letter-spacing: 0.2em; text-transform: uppercase;">Localized AI / RAG</span>
+      <h3>Agentic RAG Core</h3>
+      <p>A secure, private retrieval-augmented generation hub running exclusively on local LLMs via Ollama. Features multi-agent reasoning paths for sensitive data analysis.</p>
+      <div class="skill-tags">
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">Ollama</div>
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">LangChain</div>
+      </div>
+    </div>
+
+    <div class="proj-card gs-reveal magnetic" data-strength="12">
+      <div class="proj-img-mock"></div>
+      <span style="font-size: 0.55rem; color: var(--acc); letter-spacing: 0.2em; text-transform: uppercase;">Freelance / EDU</span>
+      <h3>PriyKunj</h3>
+      <p>A modern digital sanctuary for educational growth. Debut freelance project delivering a robust tech-stack solution for institutional branding and student engagement.</p>
+      <div class="skill-tags">
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">Next.js</div>
+        <div class="skill-tag" style="font-size:0.6rem; padding: 4px 10px;">Firebase</div>
+      </div>
+    </div>
+
+    <div class="more-projects-link gs-reveal">
+      <a href="https://linkedin.com/in/veedhaan" target="_blank" class="linkedin-bridge magnetic" data-strength="15">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+        <span>Discover full projects archive on LinkedIn</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <span class="s-label">04 // Tech Stack Kernel</span>
+  <h2 class="s-title type-text" data-text="Weaponry for the future."></h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 3rem;">
+    <div>
+      <div style="font-size: 0.6rem; color: var(--muted2); text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: 0.2em;">Web Architecture</div>
+      <div class="skill-tags">
+        <div class="skill-tag">React.js</div>
+        <div class="skill-tag">Node.js</div>
+        <div class="skill-tag">Next.js</div>
+        <div class="skill-tag">MongoDB</div>
+        <div class="skill-tag">Redux Toolkit</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 0.6rem; color: var(--muted2); text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: 0.2em;">Intelligence & RAG</div>
+      <div class="skill-tags">
+        <div class="skill-tag">LangChain</div>
+        <div class="skill-tag">Ollama</div>
+        <div class="skill-tag">Vector DBs</div>
+        <div class="skill-tag">Prompt Eng</div>
+        <div class="skill-tag">Agentic AI</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 0.6rem; color: var(--muted2); text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: 0.2em;">Game & Creative</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Unity / C#</div>
+        <div class="skill-tag">Blender</div>
+        <div class="skill-tag">Spatial Design</div>
+        <div class="skill-tag">Physics Eng</div>
+        <div class="skill-tag">Unreal Engine</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 0.6rem; color: var(--muted2); text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: 0.2em;">Systems & DevOps</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Docker</div>
+        <div class="skill-tag">CI/CD</div>
+        <div class="skill-tag">Git / Github</div>
+        <div class="skill-tag">AWS Essentials</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="connect" class="connect-section">
+  <span class="s-label">05 // System Handshake</span>
+  <h2 class="s-title type-text" data-text="Retrieve developer coordinates across the matrix."></h2>
+  
+  <div class="social-grid">
+    <a href="https://linkedin.com/in/veedhaan" target="_blank" class="social-link magnetic" data-strength="25">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+      <span>LinkedIn</span>
+    </a>
+    <a href="https://github.com/veedhaanXD" target="_blank" class="social-link magnetic" data-strength="25">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <span>GitHub</span>
+    </a>
+    <a href="https://www.instagram.com/veedhaan_60fps" target="_blank" class="social-link magnetic" data-strength="25">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      <span>Instagram</span>
+    </a>
+  </div>
+  
+  <div style="margin-top: 8rem;">
+    <a href="mailto:veedhaanxd07@gmail.com" class="magnetic" style="font-family: var(--sans); font-size: clamp(1.2rem, 4vw, 2.5rem); color: var(--acc); text-decoration:none; font-weight:800; display:inline-block; padding: 1.5rem; border-bottom: 1px solid var(--acc-dim);">
+      veedhaanXD07@gmail.com
+    </a>
+  </div>
+</section>
+
+<footer style="padding: 4rem 10vw; border-top: 1px solid var(--border); display:flex; justify-content: space-between; font-size: 0.6rem; color: var(--muted2);">
+  <span>© 2026 // VEEDHAAN // ALL_NODES_SECURE</span>
+  <span>XD</span>
+</footer>
+
+<!-- ── SCRIPTS ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
+<script>
+// ── LENIS SMOOTH SCROLL ──
+const lenis = new Lenis();
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
+// ── CUSTOM CURSOR ──
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0;
+let ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  cursor.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+});
+
+function moveRing() {
+  ringX += (mouseX - ringX) * 0.15;
+  ringY += (mouseY - ringY) * 0.15;
+  ring.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
+  requestAnimationFrame(moveRing);
+}
+moveRing();
+
+// ── MARQUEE INFINITY ──
+function setupMarquee(selector) {
+  const container = document.getElementById(selector);
+  const items = container.innerHTML;
+  container.innerHTML = items + items + items + items;
+}
+
+setupMarquee('marquee-1');
+setupMarquee('marquee-2');
+setupMarquee('marquee-3');
+
+// Cursor Hover Effects
+document.querySelectorAll('a, .proj-card, .stat-card, .skill-tag, .exp-card, .marquee-item').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('ch'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('ch'));
+});
+
+// ── CLEAN TYPING EFFECT ──
+function cleanTypeEffect(element) {
+  const text = element.dataset.text;
+  let i = 0; element.innerText = "";
+  const cursorSpan = document.createElement("span");
+  cursorSpan.className = "type-cursor";
+  element.appendChild(cursorSpan);
+  function type() {
+    if (i < text.length) {
+      cursorSpan.insertAdjacentText("beforebegin", text.charAt(i));
+      i++; setTimeout(type, 35);
+    } else { setTimeout(() => { cursorSpan.style.display = "none"; }, 2000); }
+  }
+  type();
+}
+
+// ── MAGNETIC EFFECT ──
+function initMagnetic() {
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.addEventListener('mousemove', (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left - rect.width / 2) * (el.dataset.strength || 20) / rect.width;
+      const y = (e.clientY - rect.top - rect.height / 2) * (el.dataset.strength || 20) / rect.height;
+      gsap.to(el, { x, y, duration: 0.4, ease: "power2.out" });
+    });
+    el.addEventListener('mouseleave', () => {
+      gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.3)" });
+    });
+  });
+}
+initMagnetic();
+
+const terminal = document.getElementById('terminal');
+document.addEventListener('mousemove', (e) => {
+  const x = (window.innerWidth / 2 - e.clientX) / 45;
+  const y = (window.innerHeight / 2 - e.clientY) / 45;
+  gsap.to(terminal, { rotationY: -x, rotationX: y, duration: 0.6, ease: "power2.out" });
+});
+
+// ── BOOT SEQUENCE ──
+window.onload = () => {
+  const tl = gsap.timeline();
+  
+  // 1. Cinematic Character Reveal
+  tl.to(".boot-char", {
+    opacity: 1,
+    filter: "blur(0px)",
+    scale: 1,
+    y: 0,
+    duration: 1.2,
+    stagger: {
+      amount: 0.8,
+      from: "center"
+    },
+    ease: "expo.out"
+  })
+  
+  // 2. Extension Typing Logic
+  .call(() => {
+    const extEl = document.getElementById('boot-extension');
+    const exts = [".exe", ".py", ".html", ".js", ".tsx", ".sh", ".ai"];
+    let count = 0;
+    
+    function typeExt() {
+      if (count >= exts.length) return;
+      const current = exts[count];
+      let charIdx = 0;
+      extEl.textContent = "";
+      
+      const interval = setInterval(() => {
+        extEl.textContent += current[charIdx];
+        charIdx++;
+        if(charIdx >= current.length) {
+          clearInterval(interval);
+          setTimeout(() => {
+            count++;
+            typeExt();
+          }, 150);
+        }
+      }, 50);
+    }
+    typeExt();
+  })
+
+  // 3. Show bar and status
+  .to(["#boot-bar-wrap", "#boot-status"], {
+    opacity: 1,
+    duration: 0.8,
+    delay: 0.5
+  }, "-=0.5")
+
+  // 4. Bar fill
+  .call(() => { document.getElementById('boot-fill').style.width = '100%'; })
+
+  // 5. System exit
+  .to('#boot', { 
+    opacity: 0, 
+    scale: 1.1,
+    duration: 1.2, 
+    delay: 2.5, 
+    ease: "power4.inOut", 
+    onComplete: () => {
+      document.getElementById('boot').style.display = 'none';
+      startHeroAnim();
+    }
+  });
+};
+
+function startHeroAnim() {
+  gsap.timeline()
+    .to('#user-q', { opacity: 1, y: 0, duration: 0.7 })
+    .to('#claude-r', { opacity: 1, duration: 0.5 }, "+=0.3")
+    .to('#thinking', { opacity: 0, duration: 0.4, display: 'none' }, "+=1.1")
+    .call(typeWriterResponse);
+}
+
+function typeWriterResponse() {
+  const content = document.getElementById('response-content');
+  content.innerHTML = `<div class="o-role">Creative Developer // AI Architect</div><div class="o-name">Identity: <span>Veedhaan.</span></div><div class="o-tags"> <span class="o-tag">MERN</span> <span class="o-tag">DevOps</span><span class="o-tag">AI / ML</span><span class="o-tag">Gen Ai</span><span class="o-tag">Game Dev</span></div>`;
+  gsap.from(content.children, { opacity: 0, y: 20, stagger: 0.15, duration: 0.8, ease: "power4.out" });
+}
+
+gsap.registerPlugin(ScrollTrigger);
+document.querySelectorAll('.type-text').forEach(el => {
+  ScrollTrigger.create({ trigger: el, start: "top 92%", onEnter: () => cleanTypeEffect(el), once: true });
+});
+document.querySelectorAll('.gs-reveal').forEach(el => {
+  gsap.from(el, { opacity: 0, y: 40, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 88%" }});
+});
+
+// Card Interaction Specific
+document.querySelectorAll('.exp-card, .proj-card').forEach(card => {
+  card.addEventListener('mousemove', (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    gsap.to(card, { rotationY: x * 10, rotationX: -y * 10, duration: 0.6, ease: "power2.out" });
+  });
+  card.addEventListener('mouseleave', () => {
+    gsap.to(card, { rotationY: 0, rotationX: 0, duration: 1.2, ease: "elastic.out(1, 0.3)" });
+  });
+});
+</script>
+</body>
+</html> 
